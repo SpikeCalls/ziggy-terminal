@@ -1,0 +1,20 @@
+{
+  "name": "ziggy-terminal-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Renders the ZIGGY TERMINAL video: a robo fruit fly with a brain chip that trades memecoins in a simulation.",
+  "type": "module",
+  "scripts": {
+    "serve": "python3 -m http.server 8765",
+    "preview": "node tools/snap.mjs 6 9 12",
+    "render": "bash ../scripts/render.sh"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.1.0",
+    "@fontsource/unbounded": "^5.1.0",
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

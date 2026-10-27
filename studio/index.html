@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZIGGY — fly brain trading terminal</title>
+<link rel="stylesheet" href="node_modules/@fontsource/unbounded/800.css">
+<link rel="stylesheet" href="node_modules/@fontsource/unbounded/900.css">
+<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/600.css">
+<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/700.css">
+<style>
+  :root{
+    --bg:#050608; --ink:#eef2f5; --dim:#7a838d; --mute:#454c55;
+    --green:#3dff9a; --blue:#5b8cff; --cyan:#39d0e0; --orange:#ff9f43;
+    --pink:#ff5ec8; --yellow:#ffd24a; --purple:#a77bff; --red:#ff4d6d;
+    --mono:'JetBrains Mono',monospace; --disp:'Unbounded',sans-serif;
+  }
+  html,body{margin:0;padding:0;background:var(--bg)}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--bg);font-family:var(--mono);color:var(--ink)}
+  canvas{position:absolute;display:block}
+  #gl{left:0;top:96px;width:1080px;height:660px}
+  #brain{left:0;top:744px;width:1080px;height:470px}
+  #fx{left:0;top:0;width:1080px;height:1920px}
+  .abs{position:absolute}
+
+  /* header */
+  #hdr{left:36px;right:36px;top:26px;height:60px;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:16px}
+  .brand img{width:46px;height:46px;filter:drop-shadow(0 0 10px rgba(80,210,140,.45))}
+  .brand .nm{font-family:var(--disp);font-weight:900;font-size:32px;letter-spacing:.01em}
+  .brand .nm span{background:linear-gradient(90deg,#3dff9a,#14f195 40%,#9945ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .live{display:flex;align-items:center;gap:10px;font-size:17px;letter-spacing:.2em;color:#aab3bd}
+  .live i{width:11px;height:11px;border-radius:50%;background:var(--red);box-shadow:0 0 14px var(--red);display:inline-block}
+
+  /* id card */
+  #idc{right:30px;top:114px;padding:9px 13px;border-radius:14px;background:rgba(8,10,14,.72);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
+    font-size:12.5px;line-height:1.55;letter-spacing:.03em;white-space:pre;color:#c7cfd7}
+  #idc b{color:var(--dim);font-weight:400}
+  #idc .g{color:var(--green)}
+  #lbl1{left:34px;top:118px;font-size:15px;letter-spacing:.3em;color:#8d96a0}
+  #lbl1 b{color:#fff;font-weight:600}
+
+  /* brain panel labels */
+  .plabel{font-size:15px;letter-spacing:.28em;color:#8d96a0;white-space:nowrap}
+  .plabel b{color:#fff;font-weight:600}
+  #bstats,#bstats2{top:804px;font-size:15px;line-height:1.7;letter-spacing:.12em;color:#8d96a0;white-space:nowrap}
+  #bstats{left:34px} #bstats2{right:34px;text-align:right}
+  #bstats b,#bstats2 b{color:#fff;font-weight:600}
+  .rtag{position:absolute;padding:7px 12px;border-radius:10px;background:rgba(6,8,12,.86);box-shadow:inset 0 0 0 1px var(--c),0 0 24px -4px var(--c);
+    white-space:nowrap;transform:translate(-50%,-50%);font-size:14px;letter-spacing:.06em;color:#fff}
+  .rtag i{font-style:normal;color:var(--c);font-weight:700;letter-spacing:.16em;font-size:12px;display:block;margin-bottom:2px}
+
+  /* agents */
+  .agent{position:absolute;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:26px;overflow:hidden;
+    box-shadow:0 0 0 1.5px rgba(255,255,255,.1),0 0 0 7px rgba(0,0,0,.6),0 0 34px -8px var(--c)}
+  .agent img{width:100%;height:100%;display:block;transform:scale(1.04)}
+  .agent .ring{position:absolute;inset:0;border-radius:26px;box-shadow:inset 0 0 0 3px var(--c),0 0 40px var(--c);opacity:0}
+  .alabel{position:absolute;transform:translateX(-50%);font-size:14px;letter-spacing:.22em;color:#c8d0d8;white-space:nowrap;text-align:center}
+  .alabel small{display:block;color:var(--c);font-size:12px;letter-spacing:.16em;margin-top:3px}
+
+  /* terminal */
+  #term{left:24px;top:1352px;width:1032px;height:550px;border-radius:22px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(12,15,21,.97),rgba(6,8,11,.985));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 0 0 1px rgba(153,69,255,.25),0 0 70px -18px rgba(20,241,149,.45),0 0 90px -30px rgba(153,69,255,.6)}
+  #tbar{height:46px;display:flex;align-items:center;gap:9px;padding:0 16px;background:linear-gradient(90deg,rgba(20,241,149,.08),rgba(153,69,255,.08));border-bottom:1px solid rgba(255,255,255,.08)}
+  #tbar i{width:12px;height:12px;border-radius:50%;display:inline-block}
+  #tbar .tt{margin-left:12px;font-family:var(--disp);font-weight:900;font-size:17px;letter-spacing:.06em;color:#fff;flex:1}
+  #tbar .tt span{background:linear-gradient(90deg,#14f195,#9945ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #tbar .tt small{font-family:var(--mono);font-weight:400;font-size:13px;color:#6b737d;letter-spacing:.08em;margin-left:10px}
+  #tbar .feeds{display:flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.2em;color:#6b737d}
+  #tbar .feeds img{width:26px;height:26px;border-radius:7px}
+  #trow{position:relative;height:206px;display:flex;border-bottom:1px solid rgba(255,255,255,.07)}
+  #chartbox{position:relative;width:660px;border-right:1px solid rgba(255,255,255,.07)}
+  .chh{position:absolute;left:16px;right:16px;top:10px;display:flex;align-items:baseline;gap:10px;font-size:14px;color:#8d96a0;white-space:nowrap}
+  .chh #tkn{font-family:var(--disp);font-weight:900;font-size:20px;color:#fff;letter-spacing:.01em}
+  .chh #mc{margin-left:auto;color:#cfd6dd}
+  .chh #chg{font-weight:700;font-size:15px}
+  #chart{position:absolute;left:0;top:34px;width:660px;height:172px}
+  #pos{position:relative;flex:1;padding:12px 18px}
+  #pos .k{font-size:12px;letter-spacing:.26em;color:#8d96a0}
+  #pstat{position:absolute;right:16px;top:9px;font-size:12px;font-weight:700;letter-spacing:.14em;padding:5px 10px 4px;border-radius:8px}
+  #ppnl{font-family:var(--disp);font-weight:900;font-size:46px;margin-top:10px;letter-spacing:-.01em;white-space:nowrap}
+  #ppnl2{font-size:15px;margin-top:2px;height:20px;white-space:nowrap}
+  .prow{display:flex;justify-content:space-between;font-size:14px;color:#8d96a0;margin-top:7px;letter-spacing:.06em}
+  .prow b{color:#fff;font-weight:600}
+  #votes{display:flex;gap:6px;justify-content:flex-end}
+  #votes img{width:22px;height:22px;border-radius:6px;opacity:.35}
+  #tbody{position:relative;height:178px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.25)}
+  #lines{position:absolute;left:18px;right:18px;bottom:8px}
+  .ln{height:28px;line-height:28px;font-size:18.5px;white-space:pre;overflow:hidden;color:#cfd6dd}
+  .c-g{color:var(--green)} .c-r{color:var(--red)} .c-b{color:#7fa6ff} .c-o{color:var(--orange)} .c-p{color:var(--pink)} .c-y{color:var(--yellow)} .c-d{color:#5d656e} .c-c{color:var(--cyan)} .c-w{color:#fff;font-weight:700} .c-v{color:#b58cff}
+  .cur{display:inline-block;width:11px;height:20px;background:var(--green);vertical-align:-3px}
+
+  /* stats */
+  #stats{position:relative;height:118px;display:grid;grid-template-columns:1.55fr 1fr 1fr 1fr}
+  .st{position:relative;padding:16px 18px;border-right:1px solid rgba(255,255,255,.07);overflow:hidden}
+  .st:last-child{border-right:none}
+  .st .k{font-size:12px;letter-spacing:.26em;color:var(--dim)}
+  .st .v{font-family:var(--disp);font-weight:900;font-size:36px;margin-top:10px;letter-spacing:-.01em;white-space:nowrap}
+  .st .v small{font-size:19px;margin-left:8px;background:linear-gradient(90deg,#9945ff,#14f195);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #spark{position:absolute;left:0;bottom:0;width:100%;height:44px;opacity:.9}
+
+  /* captions */
+  #cap{left:40px;right:40px;top:600px;text-align:center;font-family:var(--disp);font-weight:900;font-size:50px;line-height:1.14;letter-spacing:-.01em;
+    color:#fff;text-shadow:0 0 3px #000,0 3px 0 #000,0 6px 30px rgba(0,0,0,.95),0 0 60px rgba(0,0,0,.8)}
+  #cap em{font-style:normal;color:var(--green)}
+  #cap .pk{color:var(--pink)}
+  #cap .rd{color:var(--red)}
+
+  /* end */
+  #end{left:0;right:0;top:470px;height:310px;text-align:center;opacity:0}
+  #end .bg{position:absolute;inset:-40px 0;background:radial-gradient(60% 60% at 50% 55%,rgba(5,6,8,.9),rgba(5,6,8,0))}
+  #end .pre{position:relative;font-size:20px;letter-spacing:.36em;color:#aab3bd}
+  #end .t{position:relative;font-family:var(--disp);font-weight:900;font-size:168px;line-height:1.05;letter-spacing:-.03em;
+    background:linear-gradient(95deg,#8affc9 0%,#4fd5ff 40%,#c98bff 70%,#ff6fd0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 6px 30px rgba(0,0,0,.9))}
+  #end .s{position:relative;font-size:26px;letter-spacing:.06em;color:#fff;margin-top:4px;text-shadow:0 2px 14px #000}
+  #end .s2{position:relative;margin-top:10px;font-size:22px;letter-spacing:.2em;color:var(--green);text-shadow:0 2px 14px #000}
+</style>
+<script type="importmap">
+{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1080" height="660"></canvas>
+  <canvas id="brain" width="1080" height="470"></canvas>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+
+  <div id="hdr" class="abs">
+    <div class="brand"><img src="assets/pump.png"><div class="nm">ZIGGY <span>TERMINAL</span></div></div>
+    <div class="live"><i id="dot"></i>LIVE · SIM DAY 47</div>
+  </div>
+  <div id="lbl1" class="abs">01 — <b>THE FLY</b></div>
+  <div id="idc" class="abs"><b>SPECIES </b> D. melanogaster
+<b>MODEL   </b> <span class="g">Z</span>
+<b>IMPLANT </b> neural chip v2
+<b>STYLE   </b> full degen</div>
+
+  <div class="abs plabel" style="left:34px;top:772px">02 — <b>THE BRAIN</b></div>
+  <div class="abs plabel" style="right:34px;top:772px;color:var(--green)" id="sync">● SYNCED</div>
+  <div id="bstats" class="abs"><div><b>166,432</b> NEURONS</div><div><b>125M</b> SYNAPSES</div></div>
+  <div id="bstats2" class="abs"><div><b id="spk" style="color:var(--green)">1,204</b> SPIKES/S</div><div>LATENCY <b>0.4ms</b></div></div>
+  <div id="rtags"></div>
+
+  <div class="abs plabel" style="left:34px;top:1218px">03 — <b>AI AGENTS</b></div>
+  <div id="agents"></div>
+
+  <div id="term" class="abs">
+    <div id="tbar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+      <span class="tt">ZIGGY <span>TERMINAL</span><small>ziggy.trade · pump.fun</small></span>
+      <span class="feeds">FEEDS <img src="assets/pump.png"><img src="assets/src_tv.png"><img src="assets/src_eagle.png"></span></div>
+    <div id="trow">
+      <div id="chartbox"><div class="chh"><span id="tkn">$OVERRIPE</span><span>/ SOL · 1s</span><span id="mc">MC $38.4K</span><span id="chg">+0.0%</span></div><canvas id="chart" width="660" height="172"></canvas></div>
+      <div id="pos"><div class="k">POSITION</div><div id="pstat">SCANNING</div>
+        <div id="ppnl">—</div><div id="ppnl2">&nbsp;</div>
+        <div class="prow"><span>SIZE</span><b id="psize">—</b></div>
+        <div class="prow"><span>ENTRY</span><b id="pentry">—</b></div>
+        <div class="prow"><span>AGENTS</span><span id="votes"><img src="assets/ai_1.png"><img src="assets/ai_2.png"><img src="assets/ai_3.png"><img src="assets/ai_4.png"></span></div>
+      </div>
+    </div>
+    <div id="tbody"><div id="lines"></div></div>
+    <div id="stats">
+      <div class="st"><div class="k">BALANCE</div><div class="v" id="bal">3.918<small>SOL</small></div><canvas id="spark" width="560" height="88"></canvas></div>
+      <div class="st"><div class="k">TOTAL PNL</div><div class="v" id="roi" style="color:var(--green)">+292%</div></div>
+      <div class="st"><div class="k">TRADES</div><div class="v" id="ntr">134</div></div>
+      <div class="st"><div class="k">WIN RATE</div><div class="v">63%</div></div>
+    </div>
+  </div>
+
+  <div id="cap" class="abs"></div>
+  <div id="end" class="abs"><div class="bg"></div>
+    <div class="pre">MEET</div>
+    <div class="t">ZIGGY</div>
+    <div class="s">the fruit fly that trades memecoins</div>
+    <div class="s2">ZIGGY TERMINAL · <span id="learn">still learning_</span></div>
+  </div>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

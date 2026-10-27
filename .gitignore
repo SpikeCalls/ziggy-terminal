@@ -1,0 +1,5 @@
+node_modules/
+studio/frames/
+studio/snaps/
+studio/ziggy_music.wav
+.DS_Store
